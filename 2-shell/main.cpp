@@ -39,7 +39,6 @@ pid_t forkAndExec(std::array<char *, MAX_ARGS> &parsed, int inFd = STDIN_FILENO,
             exit(EXIT_FAILURE);
         }
     }
-
     return pid;
 }
 
@@ -64,6 +63,43 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, std::array<char *, MAX_
 
     waitpid(p1, nullptr, 0);
     waitpid(p2, nullptr, 0);
+}
+
+void execArgsBackground(std::array<char *, MAX_ARGS> &parsed) {
+    forkAndExec(parsed);
+}
+
+bool isBackgroundTask(const std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount) {
+    return parsedArgsCount > 0 && strcmp(parsedArgs[parsedArgsCount - 1], "&") == 0;
+}
+
+void execArgsRedirect(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount, bool inRedirect, bool outRedirect) {
+    int inFd;
+    int outFd = 0;
+    if (inRedirect) {
+        inFd = open(parsed[parsedCount - 1], O_RDONLY);
+        if (inFd < 0) {
+            perror("open");
+            return;
+        }
+        parsed[parsedCount - 2] = nullptr;
+    }
+
+    if (outRedirect) {
+        outFd = open(parsed[parsedCount - 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        if (outFd < 0) {
+            perror("open");
+            return;
+        }
+        parsed[parsedCount - 2] = nullptr;
+    }
+    forkAndExec(parsed);
+    if (inRedirect) {
+        waitpid(inFd, nullptr, 0);
+    }
+    if (outRedirect) {
+        waitpid(outFd, nullptr, 0);
+    }
 }
 
 std::array<char *, MAX_ARGS> split(const std::string_view &str, const std::string &delimiter, size_t &count) {
@@ -120,6 +156,7 @@ int main() {
     std::array<char *, MAX_ARGS> parsedPipedArgs{};
     size_t parsedArgsCount = 0;
     size_t parsedPipedArgsCount = 0;
+    bool inRedirect = false, outRedirect = false, backgroundTask = false;
 
     while (true) {
         std::string dir = printCurrentDirectory();
@@ -133,7 +170,10 @@ int main() {
             free(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
             break;
         }
-
+        backgroundTask = isBackgroundTask(parsedArgs, parsedArgsCount);
+        if (backgroundTask) {
+            parsedArgs[--parsedArgsCount] = nullptr;
+        }
         if (parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount)) {
             execArgsPiped(parsedArgs, parsedPipedArgs);
         } else {
@@ -142,7 +182,11 @@ int main() {
                 perror("chdir");
                 continue;
             }
-            execArgs(parsedArgs);
+            if (backgroundTask) {
+                execArgsBackground(parsedArgs);
+            } else {
+                execArgs(parsedArgs);
+            }
         }
     }
     return 0;

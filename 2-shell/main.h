@@ -7,6 +7,7 @@
 #include <wait.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include "fcntl.h"
 
 auto BLUE_TEXT = "\033[34m";
 auto YELLOW_TEXT = "\033[33m";
