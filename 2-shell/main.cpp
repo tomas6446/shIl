@@ -1,11 +1,6 @@
-#include <iostream>
-#include <array>
-#include <vector>
-#include <cstring>
-#include <wait.h>
 #include "main.h"
 
-bool parse(std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
+bool parse(const std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
            std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t &parsedPipedArgsCount) {
     parsedPipedArgs = split(input, " | ", parsedPipedArgsCount);
     if (parsedPipedArgsCount > 0) {
@@ -21,28 +16,19 @@ bool parse(std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t 
     }
 }
 
-void execArgs(std::array<char *, MAX_ARGS> &parsed, size_t count) {
-    if (strcmp(parsed[0], "cd") == 0) {
-        if (count < 2) {
-            return;
-        }
-        if (chdir(parsed[1]) < 0) {
-            perror("chdir");
-        }
-    } else {
-        pid_t pid = fork();
+void execArgs(std::array<char *, MAX_ARGS> &parsed) {
+    pid_t pid = fork();
 
-        if (pid == -1) {
-            std::cout << "Failed forking child.." << std::endl;
-            return;
-        } else if (pid == 0) {
-            if (execvp(parsed[0], parsed.data()) < 0) {
-                std::cout << "Could not execute command.." << std::endl;
-            }
-            exit(0);
-        } else {
-            wait(nullptr);
+    if (pid == -1) {
+        std::cout << "Failed forking child.." << std::endl;
+        return;
+    } else if (pid == 0) {
+        if (execvp(parsed[0], parsed.data()) < 0) {
+            std::cout << "shll: command not found.." << std::endl;
         }
+        exit(0);
+    } else {
+        waitpid(pid, nullptr, 0);
     }
 }
 
@@ -69,7 +55,7 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
 
         parsed[parsedCount] = nullptr;
         if (execvp(parsed[0], parsed.data()) < 0) {
-            std::cout << "Could not execute command 1.." << std::endl;
+            std::cout << "shll: command 1 not found.." << std::endl;
             exit(0);
         }
     } else {
@@ -87,11 +73,12 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
 
             parsedPipedArgs[parsedPipedArgsCount] = nullptr;
             if (execvp(parsedPipedArgs[0], parsedPipedArgs.data()) < 0) {
-                std::cout << "Could not execute command 2.." << std::endl;
+                std::cout << "shll: command 2 not found.." << std::endl;
                 exit(0);
             }
         } else {
-            wait(nullptr);
+            waitpid(p1, nullptr, 0);
+            waitpid(p2, nullptr, 0);
         }
     }
 }
@@ -131,7 +118,7 @@ void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
     }
 }
 
-void printCurrentDirectory() {
+std::string printCurrentDirectory() {
     std::array<char, MAX_ARG_LEN> cwd{};
     std::array<char, 32> username{};
     std::array<char, 32> hostname{};
@@ -140,8 +127,8 @@ void printCurrentDirectory() {
     gethostname(hostname.data(), hostname.size());
     getcwd(cwd.data(), cwd.size());
 
-    std::cout << YELLOW_TEXT << username.data() << "@" << hostname.data()
-              << BLUE_TEXT << " ~" << cwd.data() << " $ " << WHITE_TEXT;
+    return std::string(YELLOW_TEXT) + username.data() + "@" + hostname.data()
+           + BLUE_TEXT + " ~" + cwd.data() + " $ " + WHITE_TEXT;
 }
 
 int main() {
@@ -152,21 +139,29 @@ int main() {
     size_t parsedPipedArgsCount = 0;
 
     while (true) {
-        printCurrentDirectory();
-        std::getline(std::cin, input);
+        std::string dir = printCurrentDirectory();
+        char const *line = readline(dir.c_str());
+        input = std::string(line);
 
+        if (!input.empty()) {
+            add_history(input.c_str());
+        }
         if (input == "exit") {
             clear(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
             break;
         }
 
-        bool isPiped = parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
-        if (isPiped) {
+        if (parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount)) {
             execArgsPiped(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
         } else {
-            execArgs(parsedArgs, parsedArgsCount);
+            if (strcmp(parsedArgs[0], "cd") == 0) {
+                if (chdir(parsedArgs[1]) < 0 && parsedArgsCount >= 2) {
+                    perror("chdir");
+                }
+                continue;
+            }
+            execArgs(parsedArgs);
         }
-
     }
     return 0;
 }
