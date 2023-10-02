@@ -42,25 +42,23 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
         std::cout << "Pipe could not be initialized" << std::endl;
         return;
     }
+
     p1 = fork();
     if (p1 < 0) {
         std::cout << "Could not fork" << std::endl;
         return;
     }
-
     if (p1 == 0) {
         close(pipefd[0]);
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
 
-        parsed[parsedCount] = nullptr;
         if (execvp(parsed[0], parsed.data()) < 0) {
             std::cout << "shll: command 1 not found.." << std::endl;
             exit(0);
         }
     } else {
         p2 = fork();
-
         if (p2 < 0) {
             std::cout << "Could not fork" << std::endl;
             return;
@@ -71,7 +69,6 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
             dup2(pipefd[0], STDIN_FILENO);
             close(pipefd[0]);
 
-            parsedPipedArgs[parsedPipedArgsCount] = nullptr;
             if (execvp(parsedPipedArgs[0], parsedPipedArgs.data()) < 0) {
                 std::cout << "shll: command 2 not found.." << std::endl;
                 exit(0);
