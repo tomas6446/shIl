@@ -24,8 +24,8 @@ void execArgs(std::array<char *, MAX_ARGS> &parsed);
 
 std::array<char *, MAX_ARGS> split(const std::string_view &str, const std::string &delimiter, size_t &count);
 
-void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
-           std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount);
+void free(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
+          std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount);
 
 std::string printCurrentDirectory();
 

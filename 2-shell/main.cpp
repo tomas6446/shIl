@@ -2,19 +2,21 @@
 
 bool parse(const std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
            std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t &parsedPipedArgsCount) {
-    parsedPipedArgs = split(input, " | ", parsedPipedArgsCount);
-    if (parsedPipedArgsCount > 0) {
-        parsedArgs = split(parsedPipedArgs[0], " ", parsedArgsCount);
-        parsedPipedArgsCount -= 1;
-        if (parsedPipedArgsCount > 1) {
-            parsedPipedArgs = split(parsedPipedArgs[1], " ", parsedPipedArgsCount);
+    auto commands = split(input, " | ", parsedArgsCount);
+
+    if (parsedArgsCount > 1) {
+        parsedArgs = split(commands[0], " ", parsedArgsCount);
+        auto secondCommandArgs = split(commands[1], " ", parsedPipedArgsCount);
+        for (size_t i = 0; i < parsedPipedArgsCount; ++i) {
+            parsedPipedArgs[i] = secondCommandArgs[i];
         }
-        return parsedPipedArgsCount > 1;
+        return true;
     } else {
         parsedArgs = split(input, " ", parsedArgsCount);
         return false;
     }
 }
+
 
 pid_t forkAndExec(std::array<char *, MAX_ARGS> &parsed, int inFd = STDIN_FILENO, int outFd = STDOUT_FILENO) {
     pid_t pid = fork();
@@ -46,8 +48,7 @@ void execArgs(std::array<char *, MAX_ARGS> &parsed) {
     waitpid(pid, nullptr, 0);
 }
 
-void execArgsPiped(std::array<char *, MAX_ARGS> &parsed,
-                   std::array<char *, MAX_ARGS> &parsedPipedArgs) {
+void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, std::array<char *, MAX_ARGS> &parsedPipedArgs) {
     int pipefd[2];
 
     if (pipe(pipefd) < 0) {
@@ -90,8 +91,8 @@ std::array<char *, MAX_ARGS> split(const std::string_view &str, const std::strin
     return result;
 }
 
-void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
-           std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
+void free(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
+          std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
     for (size_t i = 0; i < parsedArgsCount; ++i) {
         delete[] parsedArgs[i];
     }
@@ -129,7 +130,7 @@ int main() {
             add_history(input.c_str());
         }
         if (input == "exit") {
-            clear(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
+            free(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
             break;
         }
 
@@ -137,9 +138,8 @@ int main() {
             execArgsPiped(parsedArgs, parsedPipedArgs);
         } else {
             if (strcmp(parsedArgs[0], "cd") == 0) {
-                if (chdir(parsedArgs[1]) < 0 && parsedArgsCount >= 2) {
-                    perror("chdir");
-                }
+                if (chdir(parsedArgs[1]) >= 0 || parsedArgsCount < 2) continue;
+                perror("chdir");
                 continue;
             }
             execArgs(parsedArgs);
