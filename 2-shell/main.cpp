@@ -80,7 +80,6 @@ void execArgs(std::array<char *, MAX_ARGS> &parsed, size_t count) {
         exit(0);
     } else {
         wait(nullptr);
-        return;
     }
 }
 
@@ -128,7 +127,6 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
                 exit(0);
             }
         } else {
-            wait(nullptr);
             wait(nullptr);
         }
     }
