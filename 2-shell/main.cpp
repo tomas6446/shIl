@@ -27,40 +27,48 @@ void printCurrentDirectory() {
               << BLUE_TEXT << " ~" << cwd.data() << " $ " << WHITE_TEXT;
 }
 
-std::array<char *, MAX_ARGS> split(const std::string &str, const char delimiter, size_t &count) {
-    std::istringstream iss(str);
+std::array<char *, MAX_ARGS> split(std::string str, const std::string &delimiter, size_t &count) {
+    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
+    std::string token;
     std::array<char *, MAX_ARGS> result{};
-    std::string item;
-    count = 0;
 
-    while (std::getline(iss, item, delimiter) && count < MAX_ARGS) {
-        auto dest = new char[item.length() + 1];
-        std::strcpy(dest, item.c_str());
+    count = 0;
+    while ((pos_end = str.find(delimiter, pos_start)) != std::string::npos) {
+        token = str.substr(pos_start, pos_end - pos_start);
+        pos_start = pos_end + delim_len;
+
+        auto dest = new char[token.length() + 1];
+        std::strcpy(dest, token.c_str());
         result[count++] = dest;
     }
-    result[count] = nullptr;
+
+    token = (str.substr(pos_start));
+    auto dest = new char[token.length() + 1];
+    std::strcpy(dest, token.c_str());
+    result[count++] = dest;
 
     return result;
 }
 
-bool parse(const std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
+bool parse(std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
            std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t &parsedPipedArgsCount) {
-    parsedPipedArgs = split(input, '|', parsedPipedArgsCount);
+    parsedPipedArgs = split(input, " | ", parsedPipedArgsCount);
     if (parsedPipedArgsCount > 0) {
-        parsedArgs = split(parsedPipedArgs[0], ' ', parsedArgsCount);
+        parsedArgs = split(parsedPipedArgs[0], " ", parsedArgsCount);
+        parsedPipedArgsCount -= 1;
         if (parsedPipedArgsCount > 1) {
-            parsedPipedArgs = split(parsedPipedArgs[1], ' ', parsedPipedArgsCount);
+            parsedPipedArgs = split(parsedPipedArgs[1], " ", parsedPipedArgsCount);
         }
         return parsedPipedArgsCount > 1;
     } else {
-        parsedArgs = split(input, ' ', parsedArgsCount);
+        parsedArgs = split(input, " ", parsedArgsCount);
         return false;
     }
 }
 
 void execArgs(std::array<char *, MAX_ARGS> &parsed, size_t count) {
     if (strcmp(parsed[0], "cd") == 0) {
-        if(count < 2) {
+        if (count < 2) {
             return;
         }
         if (chdir(parsed[1]) < 0) {
