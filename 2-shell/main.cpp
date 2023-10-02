@@ -38,6 +38,8 @@ std::array<char *, MAX_ARGS> split(const std::string &str, const char delimiter,
         std::strcpy(dest, item.c_str());
         result[count++] = dest;
     }
+    result[count] = nullptr;
+
     return result;
 }
 
