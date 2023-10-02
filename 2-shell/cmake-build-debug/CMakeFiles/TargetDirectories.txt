@@ -1,3 +1,0 @@
-/home/tomas/Documents/unix/2-shell/cmake-build-debug/CMakeFiles/2_shell.dir
-/home/tomas/Documents/unix/2-shell/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/tomas/Documents/unix/2-shell/cmake-build-debug/CMakeFiles/rebuild_cache.dir
