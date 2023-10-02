@@ -44,7 +44,7 @@ std::vector<char *> split(const std::string &str, const char delimiter) {
     return result;
 }
 
-void parse(const std::string &input, std::vector<char *> &parsedArgs, std::vector<char *> &parsedPipedArgs) {
+int parse(const std::string &input, std::vector<char *> &parsedArgs, std::vector<char *> &parsedPipedArgs) {
     parsedPipedArgs = split(input, '|');
     if (!parsedPipedArgs.empty()) {
         parsedArgs = split(parsedPipedArgs[0], ' ');
@@ -52,6 +52,7 @@ void parse(const std::string &input, std::vector<char *> &parsedArgs, std::vecto
     } else {
         parsedArgs = split(input, ' ');
     }
+    return parsedPipedArgs.size();
 }
 
 void execArgs(std::vector<char *> parsed) {
@@ -125,9 +126,13 @@ int main() {
     while (true) {
         printCurrentDirectory();
         std::getline(std::cin, input);
-        parse(input, parsedArgs, parsedPipedArgs);
+        int flag = parse(input, parsedArgs, parsedPipedArgs);
+        if (flag) {
+            execArgsPiped(parsedArgs, parsedPipedArgs);
+        } else {
+            execArgs(parsedArgs);
+        }
     }
-
     return 0;
 }
 
