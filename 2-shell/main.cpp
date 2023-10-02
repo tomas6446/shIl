@@ -58,15 +58,24 @@ bool parse(const std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, s
     }
 }
 
-void execArgs(std::array<char *, MAX_ARGS> &parsed) {
+void execArgs(std::array<char *, MAX_ARGS> &parsed, size_t count) {
+    if (strcmp(parsed[0], "cd") == 0) {
+        if(count < 2) {
+            return;
+        }
+        if (chdir(parsed[1]) < 0) {
+            perror("chdir");
+        }
+        return;
+    }
     pid_t pid = fork();
 
     if (pid == -1) {
-        std::cout << "\nFailed forking child.." << std::endl;
+        std::cout << "Failed forking child.." << std::endl;
         return;
     } else if (pid == 0) {
         if (execvp(parsed[0], parsed.data()) < 0) {
-            std::cout << "\nCould not execute command.." << std::endl;
+            std::cout << "Could not execute command.." << std::endl;
         }
         exit(0);
     } else {
@@ -81,12 +90,12 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
     pid_t p1, p2;
 
     if (pipe(pipefd) < 0) {
-        std::cout << "\nPipe could not be initialized" << std::endl;
+        std::cout << "Pipe could not be initialized" << std::endl;
         return;
     }
     p1 = fork();
     if (p1 < 0) {
-        std::cout << "\nCould not fork" << std::endl;
+        std::cout << "Could not fork" << std::endl;
         return;
     }
 
@@ -97,14 +106,14 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
 
         parsed[parsedCount] = nullptr;
         if (execvp(parsed[0], parsed.data()) < 0) {
-            std::cout << "\nCould not execute command 1.." << std::endl;
+            std::cout << "Could not execute command 1.." << std::endl;
             exit(0);
         }
     } else {
         p2 = fork();
 
         if (p2 < 0) {
-            std::cout << "\nCould not fork" << std::endl;
+            std::cout << "Could not fork" << std::endl;
             return;
         }
 
@@ -115,7 +124,7 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
 
             parsedPipedArgs[parsedPipedArgsCount] = nullptr;
             if (execvp(parsedPipedArgs[0], parsedPipedArgs.data()) < 0) {
-                std::cout << "\nCould not execute command 2.." << std::endl;
+                std::cout << "Could not execute command 2.." << std::endl;
                 exit(0);
             }
         } else {
@@ -153,8 +162,9 @@ int main() {
         if (isPiped) {
             execArgsPiped(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
         } else {
-            execArgs(parsedArgs);
+            execArgs(parsedArgs, parsedArgsCount);
         }
+
     }
     return 0;
 }
