@@ -11,7 +11,6 @@ auto YELLOW_TEXT = "\033[33m";
 const char *GREEN_TEXT = "\033[32m";
 const char *WHITE_TEXT = "\033[0m";
 
-
 constexpr size_t MAX_ARGS = 256;
 constexpr size_t MAX_ARG_LEN = 1024;
 
@@ -124,6 +123,16 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
     }
 }
 
+void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
+           std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
+    for (size_t i = 0; i < parsedArgsCount; ++i) {
+        delete[] parsedArgs[i];
+    }
+    for (size_t i = 0; i < parsedPipedArgsCount; ++i) {
+        delete[] parsedPipedArgs[i];
+    }
+}
+
 int main() {
     std::string input;
     std::array<char *, MAX_ARGS> parsedArgs{}, parsedPipedArgs{};
@@ -132,20 +141,18 @@ int main() {
     while (true) {
         printCurrentDirectory();
         std::getline(std::cin, input);
+
+        if (input == "exit") {
+            clear(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
+            break;
+        }
+
         bool isPiped = parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
         if (isPiped) {
             execArgsPiped(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
         } else {
             execArgs(parsedArgs);
         }
-        if (!(input == "exit")) continue;
-        for (size_t i = 0; i < parsedArgsCount; ++i) {
-            delete[] parsedArgs[i];
-        }
-        for (size_t i = 0; i < parsedPipedArgsCount; ++i) {
-            delete[] parsedPipedArgs[i];
-        }
-        break;
     }
     return 0;
 }
