@@ -3,49 +3,7 @@
 #include <vector>
 #include <cstring>
 #include <wait.h>
-
-auto BLUE_TEXT = "\033[34m";
-auto YELLOW_TEXT = "\033[33m";
-const char *WHITE_TEXT = "\033[0m";
-
-constexpr size_t MAX_ARGS = 256;
-constexpr size_t MAX_ARG_LEN = 1024;
-
-void printCurrentDirectory() {
-    std::array<char, MAX_ARG_LEN> cwd{};
-    std::array<char, 32> username{};
-    std::array<char, 32> hostname{};
-
-    getlogin_r(username.data(), username.size());
-    gethostname(hostname.data(), hostname.size());
-    getcwd(cwd.data(), cwd.size());
-
-    std::cout << YELLOW_TEXT << username.data() << "@" << hostname.data()
-              << BLUE_TEXT << " ~" << cwd.data() << " $ " << WHITE_TEXT;
-}
-
-std::array<char *, MAX_ARGS> split(const std::string& str, const std::string &delimiter, size_t &count) {
-    size_t pos_start = 0, pos_end, delim_len = delimiter.length();
-    std::string token;
-    std::array<char *, MAX_ARGS> result{};
-
-    count = 0;
-    while ((pos_end = str.find(delimiter, pos_start)) != std::string::npos) {
-        token = str.substr(pos_start, pos_end - pos_start);
-        pos_start = pos_end + delim_len;
-
-        auto dest = new char[token.length() + 1];
-        std::strcpy(dest, token.c_str());
-        result[count++] = dest;
-    }
-
-    token = (str.substr(pos_start));
-    auto dest = new char[token.length() + 1];
-    std::strcpy(dest, token.c_str());
-    result[count++] = dest;
-
-    return result;
-}
+#include "main.h"
 
 bool parse(std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
            std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t &parsedPipedArgsCount) {
@@ -91,7 +49,8 @@ void execArgs(std::array<char *, MAX_ARGS> &parsed, size_t count) {
 void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
                    std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
     int pipefd[2];
-    pid_t p1, p2;
+    pid_t p1;
+    pid_t p2;
 
     if (pipe(pipefd) < 0) {
         std::cout << "Pipe could not be initialized" << std::endl;
@@ -137,6 +96,31 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
     }
 }
 
+std::array<char *, MAX_ARGS> split(const std::string &str, const std::string &delimiter, size_t &count) {
+    size_t pos_start = 0;
+    size_t pos_end;
+    size_t delim_len = delimiter.length();
+    std::string token;
+    std::array<char *, MAX_ARGS> result{};
+
+    count = 0;
+    while ((pos_end = str.find(delimiter, pos_start)) != std::string::npos) {
+        token = str.substr(pos_start, pos_end - pos_start);
+        pos_start = pos_end + delim_len;
+
+        auto dest = new char[token.length() + 1];
+        std::strcpy(dest, token.c_str());
+        result[count++] = dest;
+    }
+
+    token = (str.substr(pos_start));
+    auto dest = new char[token.length() + 1];
+    std::strcpy(dest, token.c_str());
+    result[count++] = dest;
+
+    return result;
+}
+
 void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
            std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
     for (size_t i = 0; i < parsedArgsCount; ++i) {
@@ -147,10 +131,25 @@ void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
     }
 }
 
+void printCurrentDirectory() {
+    std::array<char, MAX_ARG_LEN> cwd{};
+    std::array<char, 32> username{};
+    std::array<char, 32> hostname{};
+
+    getlogin_r(username.data(), username.size());
+    gethostname(hostname.data(), hostname.size());
+    getcwd(cwd.data(), cwd.size());
+
+    std::cout << YELLOW_TEXT << username.data() << "@" << hostname.data()
+              << BLUE_TEXT << " ~" << cwd.data() << " $ " << WHITE_TEXT;
+}
+
 int main() {
     std::string input;
-    std::array<char *, MAX_ARGS> parsedArgs{}, parsedPipedArgs{};
-    size_t parsedArgsCount = 0, parsedPipedArgsCount = 0;
+    std::array<char *, MAX_ARGS> parsedArgs{};
+    std::array<char *, MAX_ARGS> parsedPipedArgs{};
+    size_t parsedArgsCount = 0;
+    size_t parsedPipedArgsCount = 0;
 
     while (true) {
         printCurrentDirectory();
