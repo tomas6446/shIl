@@ -18,8 +18,7 @@ constexpr size_t MAX_ARG_LEN = 1024;
 bool parse(const std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
            std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t &parsedPipedArgsCount);
 
-void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
-                   std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount);
+void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, std::array<char *, MAX_ARGS> &parsedPipedArgs);
 
 void execArgs(std::array<char *, MAX_ARGS> &parsed);
 

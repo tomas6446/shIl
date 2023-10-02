@@ -16,68 +16,53 @@ bool parse(const std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, s
     }
 }
 
-void execArgs(std::array<char *, MAX_ARGS> &parsed) {
+pid_t forkAndExec(std::array<char *, MAX_ARGS> &parsed, int inFd = STDIN_FILENO, int outFd = STDOUT_FILENO) {
     pid_t pid = fork();
 
     if (pid == -1) {
         std::cout << "Failed forking child.." << std::endl;
-        return;
+        exit(EXIT_FAILURE);
     } else if (pid == 0) {
+        if (inFd != STDIN_FILENO) {
+            dup2(inFd, STDIN_FILENO);
+            close(inFd);
+        }
+        if (outFd != STDOUT_FILENO) {
+            dup2(outFd, STDOUT_FILENO);
+            close(outFd);
+        }
+
         if (execvp(parsed[0], parsed.data()) < 0) {
             std::cout << "shll: command not found.." << std::endl;
+            exit(EXIT_FAILURE);
         }
-        exit(0);
-    } else {
-        waitpid(pid, nullptr, 0);
     }
+
+    return pid;
 }
 
-void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
-                   std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
+void execArgs(std::array<char *, MAX_ARGS> &parsed) {
+    pid_t pid = forkAndExec(parsed);
+    waitpid(pid, nullptr, 0);
+}
+
+void execArgsPiped(std::array<char *, MAX_ARGS> &parsed,
+                   std::array<char *, MAX_ARGS> &parsedPipedArgs) {
     int pipefd[2];
-    pid_t p1;
-    pid_t p2;
 
     if (pipe(pipefd) < 0) {
         std::cout << "Pipe could not be initialized" << std::endl;
-        return;
+        exit(EXIT_FAILURE);
     }
 
-    p1 = fork();
-    if (p1 < 0) {
-        std::cout << "Could not fork" << std::endl;
-        return;
-    }
-    if (p1 == 0) {
-        close(pipefd[0]);
-        dup2(pipefd[1], STDOUT_FILENO);
-        close(pipefd[1]);
+    pid_t p1 = forkAndExec(parsed, STDIN_FILENO, pipefd[1]);
+    close(pipefd[1]);
 
-        if (execvp(parsed[0], parsed.data()) < 0) {
-            std::cout << "shll: command 1 not found.." << std::endl;
-            exit(0);
-        }
-    } else {
-        p2 = fork();
-        if (p2 < 0) {
-            std::cout << "Could not fork" << std::endl;
-            return;
-        }
+    pid_t p2 = forkAndExec(parsedPipedArgs, pipefd[0]);
+    close(pipefd[0]);
 
-        if (p2 == 0) {
-            close(pipefd[1]);
-            dup2(pipefd[0], STDIN_FILENO);
-            close(pipefd[0]);
-
-            if (execvp(parsedPipedArgs[0], parsedPipedArgs.data()) < 0) {
-                std::cout << "shll: command 2 not found.." << std::endl;
-                exit(0);
-            }
-        } else {
-            waitpid(p1, nullptr, 0);
-            waitpid(p2, nullptr, 0);
-        }
-    }
+    waitpid(p1, nullptr, 0);
+    waitpid(p2, nullptr, 0);
 }
 
 std::array<char *, MAX_ARGS> split(const std::string_view &str, const std::string &delimiter, size_t &count) {
@@ -149,7 +134,7 @@ int main() {
         }
 
         if (parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount)) {
-            execArgsPiped(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
+            execArgsPiped(parsedArgs, parsedPipedArgs);
         } else {
             if (strcmp(parsedArgs[0], "cd") == 0) {
                 if (chdir(parsedArgs[1]) < 0 && parsedArgsCount >= 2) {
