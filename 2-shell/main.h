@@ -5,10 +5,12 @@
 #include <vector>
 #include <cstring>
 #include <wait.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 auto BLUE_TEXT = "\033[34m";
 auto YELLOW_TEXT = "\033[33m";
-const char *WHITE_TEXT = "\033[0m";
+auto WHITE_TEXT = "\033[0m";
 
 constexpr size_t MAX_ARGS = 256;
 constexpr size_t MAX_ARG_LEN = 1024;
@@ -26,5 +28,5 @@ std::array<char *, MAX_ARGS> split(const std::string &str, const std::string &de
 void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
            std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount);
 
-void printCurrentDirectory();
+std::string printCurrentDirectory();
 

@@ -1,8 +1,3 @@
-#include <iostream>
-#include <array>
-#include <vector>
-#include <cstring>
-#include <wait.h>
 #include "main.h"
 
 bool parse(std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
@@ -21,44 +16,36 @@ bool parse(std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t 
     }
 }
 
-void execArgs(std::array<char *, MAX_ARGS> &parsed, size_t count) {
-    if (strcmp(parsed[0], "cd") == 0) {
-        if (count < 2) {
-            return;
-        }
-        if (chdir(parsed[1]) < 0) {
-            perror("chdir");
-        }
-        return;
-    }
+void execArgs(char **parsedArgs) {
     pid_t pid = fork();
 
     if (pid == -1) {
-        std::cout << "Failed forking child.." << std::endl;
+        printf("\nFailed forking child..");
         return;
     } else if (pid == 0) {
-        if (execvp(parsed[0], parsed.data()) < 0) {
-            std::cout << "Could not execute command.." << std::endl;
+        if (execvp(parsedArgs[0], parsedArgs) < 0) {
+            printf("\nCould not execute command..");
         }
         exit(0);
     } else {
         wait(nullptr);
+        return;
     }
 }
 
-void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
-                   std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
+// Function where the piped system commands is executed
+void execArgsPiped(char **parsedArgs, char **parsedArgsPiped) {
     int pipefd[2];
-    pid_t p1;
     pid_t p2;
+    pid_t p1;
 
     if (pipe(pipefd) < 0) {
-        std::cout << "Pipe could not be initialized" << std::endl;
+        printf("\nPipe could not be initialized");
         return;
     }
     p1 = fork();
     if (p1 < 0) {
-        std::cout << "Could not fork" << std::endl;
+        printf("\nCould not fork");
         return;
     }
 
@@ -67,30 +54,27 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
 
-        parsed[parsedCount] = nullptr;
-        if (execvp(parsed[0], parsed.data()) < 0) {
-            std::cout << "Could not execute command 1.." << std::endl;
+        if (execvp(parsedArgs[0], parsedArgs) < 0) {
+            printf("\nCould not execute command 1..");
             exit(0);
         }
     } else {
         p2 = fork();
 
         if (p2 < 0) {
-            std::cout << "Could not fork" << std::endl;
+            printf("\nCould not fork");
             return;
         }
-
         if (p2 == 0) {
             close(pipefd[1]);
             dup2(pipefd[0], STDIN_FILENO);
             close(pipefd[0]);
-
-            parsedPipedArgs[parsedPipedArgsCount] = nullptr;
-            if (execvp(parsedPipedArgs[0], parsedPipedArgs.data()) < 0) {
-                std::cout << "Could not execute command 2.." << std::endl;
+            if (execvp(parsedArgsPiped[0], parsedArgsPiped) < 0) {
+                printf("\nCould not execute command 2..");
                 exit(0);
             }
         } else {
+            wait(nullptr);
             wait(nullptr);
         }
     }
@@ -131,7 +115,7 @@ void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
     }
 }
 
-void printCurrentDirectory() {
+std::string printCurrentDirectory() {
     std::array<char, MAX_ARG_LEN> cwd{};
     std::array<char, 32> username{};
     std::array<char, 32> hostname{};
@@ -140,8 +124,8 @@ void printCurrentDirectory() {
     gethostname(hostname.data(), hostname.size());
     getcwd(cwd.data(), cwd.size());
 
-    std::cout << YELLOW_TEXT << username.data() << "@" << hostname.data()
-              << BLUE_TEXT << " ~" << cwd.data() << " $ " << WHITE_TEXT;
+    return std::string(YELLOW_TEXT) + username.data() + "@" + hostname.data()
+           + BLUE_TEXT + " ~" + cwd.data() + " $ " + WHITE_TEXT;
 }
 
 int main() {
@@ -152,21 +136,23 @@ int main() {
     size_t parsedPipedArgsCount = 0;
 
     while (true) {
-        printCurrentDirectory();
-        std::getline(std::cin, input);
+        std::string dir = printCurrentDirectory();
+        char const *line = readline(dir.c_str());
+        input = std::string(line);
 
+        if (!input.empty()) {
+            add_history(input.c_str());
+        }
         if (input == "exit") {
             clear(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
             break;
         }
 
-        bool isPiped = parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
-        if (isPiped) {
+        if (parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount)) {
             execArgsPiped(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
         } else {
             execArgs(parsedArgs, parsedArgsCount);
         }
-
     }
     return 0;
 }
