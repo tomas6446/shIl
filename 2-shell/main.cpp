@@ -35,9 +35,9 @@ std::array<char *, MAX_ARGS> split(const std::string &str, const char delimiter,
     count = 0;
 
     while (std::getline(iss, item, delimiter) && count < MAX_ARGS) {
-        auto cstr = new char[item.length() + 1];
-        std::strcpy(cstr, item.c_str());
-        result[count++] = cstr;
+        auto dest = new char[item.length() + 1];
+        std::strcpy(dest, item.c_str());
+        result[count++] = dest;
     }
     return result;
 }
@@ -138,15 +138,14 @@ int main() {
         } else {
             execArgs(parsedArgs);
         }
-        if (input == "exit") {
-            for (size_t i = 0; i < parsedArgsCount; ++i) {
-                delete[] parsedArgs[i];
-            }
-            for (size_t i = 0; i < parsedPipedArgsCount; ++i) {
-                delete[] parsedPipedArgs[i];
-            }
-            break;
+        if (!(input == "exit")) continue;
+        for (size_t i = 0; i < parsedArgsCount; ++i) {
+            delete[] parsedArgs[i];
         }
+        for (size_t i = 0; i < parsedPipedArgsCount; ++i) {
+            delete[] parsedPipedArgs[i];
+        }
+        break;
     }
     return 0;
 }
