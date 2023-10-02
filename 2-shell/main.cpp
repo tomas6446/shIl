@@ -1,14 +1,11 @@
 #include <iostream>
-#include <csignal>
 #include <array>
 #include <vector>
-#include <sstream>
 #include <cstring>
 #include <wait.h>
 
 auto BLUE_TEXT = "\033[34m";
 auto YELLOW_TEXT = "\033[33m";
-const char *GREEN_TEXT = "\033[32m";
 const char *WHITE_TEXT = "\033[0m";
 
 constexpr size_t MAX_ARGS = 256;
@@ -27,7 +24,7 @@ void printCurrentDirectory() {
               << BLUE_TEXT << " ~" << cwd.data() << " $ " << WHITE_TEXT;
 }
 
-std::array<char *, MAX_ARGS> split(std::string str, const std::string &delimiter, size_t &count) {
+std::array<char *, MAX_ARGS> split(const std::string& str, const std::string &delimiter, size_t &count) {
     size_t pos_start = 0, pos_end, delim_len = delimiter.length();
     std::string token;
     std::array<char *, MAX_ARGS> result{};
