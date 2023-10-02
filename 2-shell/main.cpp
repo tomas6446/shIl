@@ -1,3 +1,8 @@
+#include <iostream>
+#include <array>
+#include <vector>
+#include <cstring>
+#include <wait.h>
 #include "main.h"
 
 bool parse(std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t &parsedArgsCount,
@@ -16,36 +21,44 @@ bool parse(std::string &input, std::array<char *, MAX_ARGS> &parsedArgs, size_t 
     }
 }
 
-void execArgs(char **parsedArgs) {
-    pid_t pid = fork();
-
-    if (pid == -1) {
-        printf("\nFailed forking child..");
-        return;
-    } else if (pid == 0) {
-        if (execvp(parsedArgs[0], parsedArgs) < 0) {
-            printf("\nCould not execute command..");
+void execArgs(std::array<char *, MAX_ARGS> &parsed, size_t count) {
+    if (strcmp(parsed[0], "cd") == 0) {
+        if (count < 2) {
+            return;
         }
-        exit(0);
+        if (chdir(parsed[1]) < 0) {
+            perror("chdir");
+        }
     } else {
-        wait(nullptr);
-        return;
+        pid_t pid = fork();
+
+        if (pid == -1) {
+            std::cout << "Failed forking child.." << std::endl;
+            return;
+        } else if (pid == 0) {
+            if (execvp(parsed[0], parsed.data()) < 0) {
+                std::cout << "Could not execute command.." << std::endl;
+            }
+            exit(0);
+        } else {
+            wait(nullptr);
+        }
     }
 }
 
-// Function where the piped system commands is executed
-void execArgsPiped(char **parsedArgs, char **parsedArgsPiped) {
+void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount,
+                   std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
     int pipefd[2];
-    pid_t p2;
     pid_t p1;
+    pid_t p2;
 
     if (pipe(pipefd) < 0) {
-        printf("\nPipe could not be initialized");
+        std::cout << "Pipe could not be initialized" << std::endl;
         return;
     }
     p1 = fork();
     if (p1 < 0) {
-        printf("\nCould not fork");
+        std::cout << "Could not fork" << std::endl;
         return;
     }
 
@@ -54,33 +67,36 @@ void execArgsPiped(char **parsedArgs, char **parsedArgsPiped) {
         dup2(pipefd[1], STDOUT_FILENO);
         close(pipefd[1]);
 
-        if (execvp(parsedArgs[0], parsedArgs) < 0) {
-            printf("\nCould not execute command 1..");
+        parsed[parsedCount] = nullptr;
+        if (execvp(parsed[0], parsed.data()) < 0) {
+            std::cout << "Could not execute command 1.." << std::endl;
             exit(0);
         }
     } else {
         p2 = fork();
 
         if (p2 < 0) {
-            printf("\nCould not fork");
+            std::cout << "Could not fork" << std::endl;
             return;
         }
+
         if (p2 == 0) {
             close(pipefd[1]);
             dup2(pipefd[0], STDIN_FILENO);
             close(pipefd[0]);
-            if (execvp(parsedArgsPiped[0], parsedArgsPiped) < 0) {
-                printf("\nCould not execute command 2..");
+
+            parsedPipedArgs[parsedPipedArgsCount] = nullptr;
+            if (execvp(parsedPipedArgs[0], parsedPipedArgs.data()) < 0) {
+                std::cout << "Could not execute command 2.." << std::endl;
                 exit(0);
             }
         } else {
-            wait(nullptr);
             wait(nullptr);
         }
     }
 }
 
-std::array<char *, MAX_ARGS> split(const std::string &str, const std::string &delimiter, size_t &count) {
+std::array<char *, MAX_ARGS> split(const std::string_view &str, const std::string &delimiter, size_t &count) {
     size_t pos_start = 0;
     size_t pos_end;
     size_t delim_len = delimiter.length();
@@ -115,7 +131,7 @@ void clear(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
     }
 }
 
-std::string printCurrentDirectory() {
+void printCurrentDirectory() {
     std::array<char, MAX_ARG_LEN> cwd{};
     std::array<char, 32> username{};
     std::array<char, 32> hostname{};
@@ -124,8 +140,8 @@ std::string printCurrentDirectory() {
     gethostname(hostname.data(), hostname.size());
     getcwd(cwd.data(), cwd.size());
 
-    return std::string(YELLOW_TEXT) + username.data() + "@" + hostname.data()
-           + BLUE_TEXT + " ~" + cwd.data() + " $ " + WHITE_TEXT;
+    std::cout << YELLOW_TEXT << username.data() << "@" << hostname.data()
+              << BLUE_TEXT << " ~" << cwd.data() << " $ " << WHITE_TEXT;
 }
 
 int main() {
@@ -136,29 +152,21 @@ int main() {
     size_t parsedPipedArgsCount = 0;
 
     while (true) {
-        std::string dir = printCurrentDirectory();
-        char const *line = readline(dir.c_str());
-        input = std::string(line);
+        printCurrentDirectory();
+        std::getline(std::cin, input);
 
-        if (!input.empty()) {
-            add_history(input.c_str());
-        }
         if (input == "exit") {
             clear(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
             break;
         }
 
-        if (parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount)) {
+        bool isPiped = parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
+        if (isPiped) {
             execArgsPiped(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
         } else {
             execArgs(parsedArgs, parsedArgsCount);
         }
+
     }
     return 0;
 }
-
-
-
-
-
-
