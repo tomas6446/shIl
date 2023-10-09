@@ -57,7 +57,7 @@ void execArgsRedirect(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount, 
 
     pid_t pid = forkAndExec(parsed, inFd, outFd);
     waitpid(pid, nullptr, 0);
-    
+
     if (inRedirect) {
         close(inFd);
     }
