@@ -9,11 +9,9 @@ pid_t forkAndExec(std::array<char *, MAX_ARGS> &parsed, int inFd, int outFd) {
     } else if (pid == 0) {
         if (inFd != STDIN_FILENO) {
             dup2(inFd, STDIN_FILENO);
-            close(inFd);
         }
         if (outFd != STDOUT_FILENO) {
             dup2(outFd, STDOUT_FILENO);
-            close(outFd);
         }
         if (execvp(parsed[0], parsed.data()) < 0) {
             std::cout << "shll: command not found.." << std::endl;
@@ -49,21 +47,22 @@ void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, std::array<char *, MAX_
 void execArgsRedirect(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount, bool inRedirect, bool outRedirect) {
     int inFd = STDIN_FILENO;
     int outFd = STDOUT_FILENO;
+
     if (inRedirect) {
         inFd = open(parsed[parsedCount - 1], O_RDONLY);
-        parsed[parsedCount - 1] = nullptr;
     }
     if (outRedirect) {
         outFd = open(parsed[parsedCount - 1], O_WRONLY | O_CREAT | O_TRUNC, 0644);
-        parsed[parsedCount - 1] = nullptr;
     }
 
-    forkAndExec(parsed);
+    pid_t pid = forkAndExec(parsed, inFd, outFd);
+    waitpid(pid, nullptr, 0);
+    
     if (inRedirect) {
-        waitpid(inFd, nullptr, 0);
+        close(inFd);
     }
     if (outRedirect) {
-        waitpid(outFd, nullptr, 0);
+        close(outFd);
     }
 }
 

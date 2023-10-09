@@ -50,24 +50,20 @@ void handleExecution(const std::string &input,
                      size_t parsedPipedArgsCount,
                      bool inRedirect,
                      bool outRedirect) {
+
     if (parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount)) {
         execArgsPiped(parsedArgs, parsedPipedArgs);
-        if (inRedirect || outRedirect) {
-            execArgsRedirect(parsedArgs, parsedArgsCount, inRedirect, outRedirect);
+    } else if (inRedirect || outRedirect) {
+        execArgsRedirect(parsedArgs, parsedArgsCount, inRedirect, outRedirect);
+    } else if (strcmp(parsedArgs[0], "cd") == 0) {
+        if (chdir(parsedArgs[1]) >= 0 || parsedArgsCount < 2) {
+            return;
         }
+        perror("chdir");
+    } else if (isBackgroundTask(parsedArgs, parsedArgsCount)) {
+        execArgsBackground(parsedArgs);
     } else {
-        if (strcmp(parsedArgs[0], "cd") == 0) {
-            if (chdir(parsedArgs[1]) >= 0 || parsedArgsCount < 2) {
-                return;
-            }
-            perror("chdir");
-        } else if (isBackgroundTask(parsedArgs, parsedArgsCount)) {
-            execArgsBackground(parsedArgs);
-        } else if (inRedirect || outRedirect) {
-            execArgsRedirect(parsedArgs, parsedArgsCount, inRedirect, outRedirect);
-        } else {
-            execArgs(parsedArgs);
-        }
+        execArgs(parsedArgs);
     }
 }
 
@@ -84,7 +80,6 @@ int main() {
     while (true) {
         char const *line = readline(printCurrentDirectory().c_str());
         input = std::string(line);
-
         if (input.empty()) {
             continue;
         }
@@ -95,7 +90,6 @@ int main() {
         add_history(input.c_str());
         handleRedirects(input, inRedirect, outRedirect);
         handleExecution(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount, inRedirect, outRedirect);
-        freeMemory(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
     }
     return 0;
 }
