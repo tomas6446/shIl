@@ -19,8 +19,8 @@ void freeMemory(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount
 
 std::string printCurrentDirectory() {
     std::array<char, MAX_ARG_LEN> cwd{};
-    std::array<char, 32> username{};
-    std::array<char, 32> hostname{};
+    std::array<char, MAX_ARG_LEN> username{};
+    std::array<char, MAX_ARG_LEN> hostname{};
 
     getlogin_r(username.data(), username.size());
     gethostname(hostname.data(), hostname.size());
@@ -30,31 +30,13 @@ std::string printCurrentDirectory() {
            + std::string(BLUE_TEXT) + " ~" + cwd.data() + " $ " + std::string(WHITE_TEXT);
 }
 
-void handleRedirects(std::string &input, bool &inRedirect, bool &outRedirect) {
-    unsigned long pos = input.find('<');
-    if (pos != std::string::npos) {
-        inRedirect = true;
-        input.erase(pos, 1);
-    }
-    pos = input.find('>');
-    if (pos != std::string::npos) {
-        outRedirect = true;
-        input.erase(pos, 1);
-    }
-}
-
 void handleExecution(const std::string &input,
                      std::array<char *, MAX_ARGS> &parsedArgs,
                      size_t parsedArgsCount,
                      std::array<char *, MAX_ARGS> &parsedPipedArgs,
-                     size_t parsedPipedArgsCount,
-                     bool inRedirect,
-                     bool outRedirect) {
-
+                     size_t parsedPipedArgsCount) {
     if (parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount)) {
         execArgsPiped(parsedArgs, parsedPipedArgs);
-    } else if (inRedirect || outRedirect) {
-        execArgsRedirect(parsedArgs, parsedArgsCount, inRedirect, outRedirect);
     } else if (strcmp(parsedArgs[0], "cd") == 0) {
         if (chdir(parsedArgs[1]) >= 0 || parsedArgsCount < 2) {
             return;
@@ -69,15 +51,13 @@ void handleExecution(const std::string &input,
 
 
 int main() {
-    std::string input;
-    std::array<char *, MAX_ARGS> parsedArgs{};
-    std::array<char *, MAX_ARGS> parsedPipedArgs{};
-    size_t parsedArgsCount = 0;
-    size_t parsedPipedArgsCount = 0;
-    bool inRedirect = false;
-    bool outRedirect = false;
-
     while (true) {
+        std::string input;
+        std::array<char *, MAX_ARGS> parsedArgs{};
+        std::array<char *, MAX_ARGS> parsedPipedArgs{};
+        size_t parsedArgsCount = 0;
+        size_t parsedPipedArgsCount = 0;
+
         char const *line = readline(printCurrentDirectory().c_str());
         input = std::string(line);
         if (input.empty()) {
@@ -88,8 +68,8 @@ int main() {
             break;
         }
         add_history(input.c_str());
-        handleRedirects(input, inRedirect, outRedirect);
-        handleExecution(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount, inRedirect, outRedirect);
+        handleExecution(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
+        freeMemory(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
     }
     return 0;
 }

@@ -2,13 +2,15 @@
 
 #include "main.h"
 
-pid_t forkAndExec(std::array<char *, MAX_ARGS> &parsed, int inFd = STDIN_FILENO, int outFd = STDOUT_FILENO);
+std::pair<std::vector<std::pair<char, int>>, std::array<char *, MAX_ARGS>> findRedirectionSymbolsAndCleanArgs(std::array<char *, MAX_ARGS> &args);
 
-void execArgs(std::array<char *, MAX_ARGS> &parsed);
+void execute(std::array<char *, MAX_ARGS> &parsed, pid_t pid);
 
-void execArgsPiped(std::array<char *, MAX_ARGS> &parsed, std::array<char *, MAX_ARGS> &parsedPipedArgs);
+void execArgs(std::array<char *, MAX_ARGS> &parsedArgs);
 
-void execArgsRedirect(std::array<char *, MAX_ARGS> &parsed, size_t parsedCount, bool inRedirect, bool outRedirect);
+void execArgsPiped(std::array<char *, MAX_ARGS> &parsedArgs, std::array<char *, MAX_ARGS> &parsedPipedArgs);
+
+void execArgsRedirect(std::array<char *, MAX_ARGS> &parsed, const std::vector<std::pair<char, int>> &redirections);
 
 void execArgsBackground(std::array<char *, MAX_ARGS> &parsed);
 
