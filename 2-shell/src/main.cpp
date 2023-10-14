@@ -61,6 +61,15 @@ void handleExecution(const std::string &input) {
     commandPiped.free();
 }
 
+void validateInput(const std::string_view &input) {
+    if (input.empty()) {
+        return;
+    }
+    if (input == "exit") {
+        exit(0);
+    }
+}
+
 
 int main() {
     while (true) {
@@ -68,13 +77,7 @@ int main() {
 
         char const *line = readline(printCurrentDirectory().c_str());
         input = std::string(line);
-        if (input.empty()) {
-            continue;
-        }
-        if (input == "exit") {
-            break;
-        }
-
+        validateInput(input);
         add_history(input.c_str());
         handleExecution(input);
     }

@@ -27,7 +27,7 @@ void Command::addArgument(const std::string &token) {
     }
 }
 
-char *Command::operator[](int index) {
+char *Command::operator[](size_t index) {
     if (index >= argsCount) {
         std::cout << "Index out of bound, exiting";
         exit(0);
@@ -68,7 +68,7 @@ void Command::execArgsPiped(Command &commandPiped) {
 }
 
 void Command::execArgsRedirect() {
-    commandExecutor->execArgsRedirect(*this);
+    CommandExecutor::execArgsRedirect(*this);
 }
 
 void Command::execArgsBackground() {
@@ -78,4 +78,5 @@ void Command::execArgsBackground() {
 bool Command::isBackgroundTask() {
     return CommandExecutor::isBackgroundTask(*this);
 }
+
 
