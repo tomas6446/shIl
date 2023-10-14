@@ -27,10 +27,16 @@ void Command::addArgument(const std::string &token) {
     }
 }
 
-char *Command::operator[](size_t index) {
+const char *Command::operator[](size_t index) const {
     if (index >= argsCount) {
-        std::cout << "Index out of bound, exiting";
-        exit(0);
+        throw std::out_of_range("Index out of range");
+    }
+    return arguments[index];
+}
+
+char *&Command::operator[](size_t index) {
+    if (index >= argsCount) {
+        throw std::out_of_range("Index out of range");
     }
     return arguments[index];
 }

@@ -23,7 +23,9 @@ public:
 
     void free();
 
-    char *operator[](size_t index);
+    const char *operator[](size_t index) const;
+
+    char *&operator[](size_t index);
 
     void execArgs();
 

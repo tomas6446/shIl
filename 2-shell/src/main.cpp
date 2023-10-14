@@ -70,7 +70,6 @@ void validateInput(const std::string_view &input) {
     }
 }
 
-
 int main() {
     while (true) {
         std::string input;

@@ -35,7 +35,11 @@ void CommandExecutor::execArgsBackground(Command &command) {
 }
 
 bool CommandExecutor::isBackgroundTask(Command &command) {
-    return command.getArgsCount() > 0 && strcmp(command[command.getArgsCount() - 1], "&") == 0;
+    auto isBackground = command.getArgsCount() > 0 && strcmp(command[command.getArgsCount() - 1], "&") == 0;
+    if (isBackground) {
+        command[command.getArgsCount() - 1] = nullptr;
+    }
+    return isBackground;
 }
 
 void CommandExecutor::execute(Command &command, pid_t pid) {
