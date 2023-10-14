@@ -1,21 +1,9 @@
 #include "../headers/main.h"
-#include "../headers/exec.h"
-#include "../headers/parser.h"
+#include "../headers/Command.h"
 
 auto BLUE_TEXT = "\033[34m";
 auto YELLOW_TEXT = "\033[33m";
 auto WHITE_TEXT = "\033[0m";
-
-
-void freeMemory(std::array<char *, MAX_ARGS> &parsedArgs, size_t parsedArgsCount,
-                std::array<char *, MAX_ARGS> &parsedPipedArgs, size_t parsedPipedArgsCount) {
-    for (size_t i = 0; i < parsedArgsCount; ++i) {
-        delete[] parsedArgs[i];
-    }
-    for (size_t i = 0; i < parsedPipedArgsCount; ++i) {
-        delete[] parsedPipedArgs[i];
-    }
-}
 
 std::string printCurrentDirectory() {
     std::array<char, MAX_ARG_LEN> cwd{};
@@ -30,33 +18,53 @@ std::string printCurrentDirectory() {
            + std::string(BLUE_TEXT) + " ~" + cwd.data() + " $ " + std::string(WHITE_TEXT);
 }
 
-void handleExecution(const std::string &input,
-                     std::array<char *, MAX_ARGS> &parsedArgs,
-                     size_t parsedArgsCount,
-                     std::array<char *, MAX_ARGS> &parsedPipedArgs,
-                     size_t parsedPipedArgsCount) {
-    if (parse(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount)) {
-        execArgsPiped(parsedArgs, parsedPipedArgs);
-    } else if (strcmp(parsedArgs[0], "cd") == 0) {
-        if (chdir(parsedArgs[1]) >= 0 || parsedArgsCount < 2) {
-            return;
-        }
-        perror("chdir");
-    } else if (isBackgroundTask(parsedArgs, parsedArgsCount)) {
-        execArgsBackground(parsedArgs);
+bool parse(const std::string &input, Command &command,
+           Command &commandPiped) {
+    auto commands = Command::split(input, " | ");
+
+    if (commands.getArgsCount() > 1) {
+        command = Command::split(commands[0], " ");
+        commandPiped = Command::split(commands[1], " ");
+        return true;
     } else {
-        execArgs(parsedArgs);
+        command = Command::split(input, " ");
+        return false;
     }
+}
+
+bool isChangeDirCommand(Command &command) {
+    return strcmp(command[0], "cd") == 0;
+}
+
+void handleChangeDir(Command &command) {
+    if (command.getArgsCount() < 2 || chdir(command[1]) >= 0) {
+        return;
+    }
+    perror("chdir");
+}
+
+void handleExecution(const std::string &input) {
+    Command command(0, std::array<char *, MAX_ARGS>());
+    Command commandPiped(0, std::array<char *, MAX_ARGS>());
+
+    if (parse(input, command, commandPiped)) {
+        command.execArgsPiped(commandPiped);
+    } else if (isChangeDirCommand(command)) {
+        handleChangeDir(command);
+    } else if (command.isBackgroundTask()) {
+        command.execArgsBackground();
+    } else {
+        command.execArgs();
+    }
+
+    command.free();
+    commandPiped.free();
 }
 
 
 int main() {
     while (true) {
         std::string input;
-        std::array<char *, MAX_ARGS> parsedArgs{};
-        std::array<char *, MAX_ARGS> parsedPipedArgs{};
-        size_t parsedArgsCount = 0;
-        size_t parsedPipedArgsCount = 0;
 
         char const *line = readline(printCurrentDirectory().c_str());
         input = std::string(line);
@@ -64,12 +72,11 @@ int main() {
             continue;
         }
         if (input == "exit") {
-            freeMemory(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
             break;
         }
+
         add_history(input.c_str());
-        handleExecution(input, parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
-        freeMemory(parsedArgs, parsedArgsCount, parsedPipedArgs, parsedPipedArgsCount);
+        handleExecution(input);
     }
     return 0;
 }
