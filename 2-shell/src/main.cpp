@@ -60,16 +60,21 @@ void handleExecution(const std::string &input, CommandExecutor *commandExecutor)
     }
 }
 
+void sigtstp_handler(int signum) {
+    std::cout << "\nshll: Received Ctrl+Z" << std::endl;
+}
+
 int main() {
     auto *jobHandler = new JobHandler;
     auto *commandExecutor = new CommandExecutor(jobHandler);
-    signal(SIGTSTP, jobHandler->handleSigtstp());
+
+    signal(SIGTSTP, sigtstp_handler);
 
     while (true) {
         std::string input;
         char const *line = readline(printCurrentDirectory().c_str());
         input = std::string(line);
-        
+
         if (input.empty()) {
             continue;
         } else if (input == "exit") {
@@ -84,7 +89,7 @@ int main() {
             jobHandler->handleBg(input);
             continue;
         }
-
+        jobHandler->handleSigtstp();
         add_history(input.c_str());
         handleExecution(input, commandExecutor);
     }

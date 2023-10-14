@@ -16,7 +16,7 @@ public:
 
     void handleBg(const std::string_view &input);
 
-    __sighandler_t handleSigtstp();
+    void handleSigtstp();
 
     pid_t getCurrentForegroundJob() const;
 

@@ -61,7 +61,7 @@ void JobHandler::addJob(const Job &job) {
     jobs.emplace_back(job);
 }
 
-__sighandler_t JobHandler::handleSigtstp() {
+void JobHandler::handleSigtstp() {
     if (currentForegroundJob != -1) {
         kill(currentForegroundJob, SIGTSTP);
         for (auto &item: jobs) {
@@ -71,7 +71,6 @@ __sighandler_t JobHandler::handleSigtstp() {
             }
         }
     }
-    return nullptr;
 }
 
 pid_t JobHandler::getCurrentForegroundJob() const {
