@@ -3,3 +3,4 @@ cmake-build-debug
 exec.o
 main.o
 parser.o
+2_shell
