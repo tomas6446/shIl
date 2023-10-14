@@ -65,24 +65,20 @@ void Command::free() {
     }
 }
 
-void Command::execArgs() {
-    CommandExecutor::execArgs(*this);
+std::string Command::toString() const {
+    std::string result;
+    for (size_t i = 0; i < argsCount; ++i) {
+        result += arguments[i];
+        if (i < argsCount - 1) {
+            result += " ";
+        }
+    }
+    return result;
 }
 
-void Command::execArgsPiped(Command &commandPiped) {
-    CommandExecutor::execArgsPiped(*this, commandPiped);
-}
-
-void Command::execArgsRedirect() {
-    CommandExecutor::execArgsRedirect(*this);
-}
-
-void Command::execArgsBackground() {
-    CommandExecutor::execArgsBackground(*this);
-}
-
-bool Command::isBackgroundTask() {
-    return CommandExecutor::isBackgroundTask(*this);
+void Command::remove(size_t i) {
+    arguments[i] = nullptr;
+    argsCount--;
 }
 
 

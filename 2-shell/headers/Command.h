@@ -1,13 +1,12 @@
 #pragma once
 
 #include "main.h"
-#include "CommandExecutor.h"
-
-class CommandExecutor;
 
 class Command {
 public:
     explicit Command(size_t count, std::array<char *, MAX_ARGS> const &args);
+
+    std::string toString() const;
 
     const std::array<char *, MAX_ARGS> &getArgs() const;
 
@@ -27,18 +26,9 @@ public:
 
     char *&operator[](size_t index);
 
-    void execArgs();
-
-    void execArgsPiped(Command &commandPiped);
-
-    void execArgsRedirect();
-
-    void execArgsBackground();
-
-    bool isBackgroundTask();
+    void remove(size_t i);
 
 private:
     std::array<char *, MAX_ARGS> arguments{};
     size_t argsCount = 0;
-    CommandExecutor *commandExecutor{};
 };

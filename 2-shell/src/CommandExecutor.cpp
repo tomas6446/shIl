@@ -2,6 +2,7 @@
 
 void CommandExecutor::execArgs(Command &command) {
     pid_t pid = fork();
+    jobHandler->setCurrentForegroundJob(pid);
     execute(command, pid);
     waitpid(pid, nullptr, 0);
 }
@@ -31,13 +32,16 @@ void CommandExecutor::execArgsRedirect(Command &command) {
 
 void CommandExecutor::execArgsBackground(Command &command) {
     pid_t pid = fork();
+    if (pid > 0) {
+        jobHandler->addJob(Job(pid, "running", command));
+    }
     execute(command, pid);
 }
 
 bool CommandExecutor::isBackgroundTask(Command &command) {
     auto isBackground = command.getArgsCount() > 0 && strcmp(command[command.getArgsCount() - 1], "&") == 0;
     if (isBackground) {
-        command[command.getArgsCount() - 1] = nullptr;
+        command.remove(command.getArgsCount() - 1);
     }
     return isBackground;
 }

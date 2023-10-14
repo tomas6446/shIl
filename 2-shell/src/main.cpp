@@ -1,5 +1,7 @@
 #include "../headers/main.h"
 #include "../headers/Command.h"
+#include "../headers/JobHandler.h"
+#include "../headers/CommandExecutor.h"
 
 auto BLUE_TEXT = "\033[34m";
 auto YELLOW_TEXT = "\033[33m";
@@ -43,42 +45,48 @@ void handleChangeDir(Command &command) {
     perror("chdir");
 }
 
-void handleExecution(const std::string &input) {
+void handleExecution(const std::string &input, CommandExecutor *commandExecutor) {
     Command command(0, std::array<char *, MAX_ARGS>());
     Command commandPiped(0, std::array<char *, MAX_ARGS>());
 
     if (parse(input, command, commandPiped)) {
-        command.execArgsPiped(commandPiped);
+        CommandExecutor::execArgsPiped(command, commandPiped);
     } else if (isChangeDirCommand(command)) {
         handleChangeDir(command);
-    } else if (command.isBackgroundTask()) {
-        command.execArgsBackground();
+    } else if (CommandExecutor::isBackgroundTask(command)) {
+        commandExecutor->execArgsBackground(command);
     } else {
-        command.execArgs();
-    }
-
-    command.free();
-    commandPiped.free();
-}
-
-void validateInput(const std::string_view &input) {
-    if (input.empty()) {
-        return;
-    }
-    if (input == "exit") {
-        exit(0);
+        commandExecutor->execArgs(command);
     }
 }
 
 int main() {
+    auto *jobHandler = new JobHandler;
+    auto *commandExecutor = new CommandExecutor(jobHandler);
+    signal(SIGTSTP, jobHandler->handleSigtstp());
+
     while (true) {
         std::string input;
-
         char const *line = readline(printCurrentDirectory().c_str());
         input = std::string(line);
-        validateInput(input);
+        
+        if (input.empty()) {
+            continue;
+        } else if (input == "exit") {
+            exit(0);
+        } else if (input == "jobs") {
+            jobHandler->handleJobs();
+            continue;
+        } else if (input.substr(0, 2) == "fg") {
+            jobHandler->handleFg(input);
+            continue;
+        } else if (input.substr(0, 2) == "bg") {
+            jobHandler->handleBg(input);
+            continue;
+        }
+
         add_history(input.c_str());
-        handleExecution(input);
+        handleExecution(input, commandExecutor);
     }
     return 0;
 }

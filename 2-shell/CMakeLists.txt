@@ -10,6 +10,10 @@ add_executable(2_shell
         headers/Command.h
         src/CommandExecutor.cpp
         headers/CommandExecutor.h
+        src/JobHandler.cpp
+        headers/JobHandler.h
+        src/Job.cpp
+        headers/Job.h
 )
 
 target_link_libraries(2_shell readline)
