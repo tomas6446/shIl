@@ -64,6 +64,24 @@ void sigtstp_handler(int signum) {
     }
 }
 
+bool isCustomCommand(const std::string &input, JobHandler *jobHandler) {
+    if (input.empty()) {
+        return true;
+    } else if (input == "jobs") {
+        jobHandler->handleJobs();
+        return true;
+    } else if (input.substr(0, 2) == "fg") {
+        jobHandler->handleFg(input);
+        return true;
+    } else if (input.substr(0, 2) == "bg") {
+        jobHandler->handleBg(input);
+        return true;
+    } else if (input == "exit") {
+        exit(0);
+    }
+    return false;
+}
+
 int main() {
     signal(SIGTSTP, sigtstp_handler);
 
@@ -75,18 +93,7 @@ int main() {
         char const *line = readline(printCurrentDirectory().c_str());
         input = std::string(line);
 
-        if (input.empty()) {
-            continue;
-        } else if (input == "exit") {
-            exit(0);
-        } else if (input == "jobs") {
-            jobHandler->handleJobs();
-            continue;
-        } else if (input.substr(0, 2) == "fg") {
-            jobHandler->handleFg(input);
-            continue;
-        } else if (input.substr(0, 2) == "bg") {
-            jobHandler->handleBg(input);
+        if (isCustomCommand(input, jobHandler)) {
             continue;
         }
         jobHandler->handleSigtstp();
