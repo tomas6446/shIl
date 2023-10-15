@@ -1,6 +1,8 @@
 #pragma once
 
-#include "main.h"
+#include <unistd.h>
+#include <sys/wait.h>
+#include <cstring>
 #include "Command.h"
 #include "JobHandler.h"
 
@@ -8,11 +10,11 @@ class Command;
 
 class CommandExecutor {
 public:
-    explicit CommandExecutor(JobHandler *handler) : jobHandler(handler) {}
+    explicit CommandExecutor(JobHandler *handler, pid_t &pid) : child_pid(pid), jobHandler(handler) {}
 
     void execArgs(Command &command);
 
-    static void execArgsPiped(const std::vector<Command> &commands);
+    void execArgsPiped(const std::vector<Command> &commands);
 
     void execArgsRedirect(Command &command);
 
@@ -21,7 +23,9 @@ public:
     static bool isBackgroundTask(Command &command);
 
 private:
-    static void execute(Command command, pid_t pid);
+    void execute(Command command) const;
+
+    pid_t &child_pid;
 
     JobHandler *jobHandler;
 };

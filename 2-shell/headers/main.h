@@ -1,14 +1,6 @@
 #pragma once
 
-#include <iostream>
-#include <sstream>
-#include <array>
-#include <vector>
-#include <cstring>
-#include <wait.h>
-#include <readline/readline.h>
-#include <readline/history.h>
-#include "fcntl.h"
+#include <cstddef>
 
 constexpr size_t MAX_ARGS = 64;
 constexpr size_t MAX_ARG_LEN = 1024;

@@ -1,3 +1,6 @@
+#include <iostream>
+#include <sstream>
+#include <signal.h>
 #include "../headers/JobHandler.h"
 
 void JobHandler::handleJobs() const {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <list>
-#include "main.h"
 #include "Job.h"
 
 class Job;

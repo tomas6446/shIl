@@ -1,6 +1,5 @@
 #pragma once
 
-#include "main.h"
 #include "Command.h"
 
 class Command;

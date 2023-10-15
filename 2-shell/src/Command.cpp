@@ -1,4 +1,5 @@
-#include <array>
+#include <cstring>
+#include <stdexcept>
 #include "../headers/Command.h"
 
 Command::Command(size_t count, std::array<char *, MAX_ARGS> const &args) : arguments(args), argsCount(count) {}

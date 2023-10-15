@@ -1,3 +1,6 @@
+#include <iostream>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include "../headers/main.h"
 #include "../headers/Command.h"
 #include "../headers/JobHandler.h"
@@ -6,6 +9,7 @@
 auto BLUE_TEXT = "\033[34m";
 auto YELLOW_TEXT = "\033[33m";
 auto WHITE_TEXT = "\033[0m";
+pid_t child_pid = -1;
 
 std::string printCurrentDirectory() {
     std::array<char, MAX_ARG_LEN> cwd{};
@@ -44,22 +48,26 @@ void executeSingleCommand(Command &command, CommandExecutor *commandExecutor) {
 void handleExecution(const std::string &input, CommandExecutor *commandExecutor) {
     std::vector<Command> commands = Command::splitCommands(input, " | ");
     if (commands.size() > 1) {
-        CommandExecutor::execArgsPiped(commands);
+        commandExecutor->execArgsPiped(commands);
     } else {
         executeSingleCommand(commands[0], commandExecutor);
     }
 }
 
-
 void sigtstp_handler(int signum) {
-    std::cout << "\nshll: Received Ctrl+Z" << std::endl;
+    if (child_pid > 0) {
+        std::cout << "\nshll: Received Ctrl+Z." << std::endl;
+        kill(child_pid, SIGTSTP);
+    } else {
+        std::cout << "\nNo running job to suspend.\n";
+    }
 }
 
 int main() {
-    auto *jobHandler = new JobHandler;
-    auto *commandExecutor = new CommandExecutor(jobHandler);
-
     signal(SIGTSTP, sigtstp_handler);
+
+    auto *jobHandler = new JobHandler;
+    auto *commandExecutor = new CommandExecutor(jobHandler, child_pid);
 
     while (true) {
         std::string input;

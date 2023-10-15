@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <string>
+#include <vector>
 #include "main.h"
 
 class Command {
@@ -33,6 +36,4 @@ public:
 private:
     std::array<char *, MAX_ARGS> arguments{};
     size_t argsCount = 0;
-
-
 };

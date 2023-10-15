@@ -1,10 +1,12 @@
+#include <iostream>
 #include "../headers/CommandExecutor.h"
 
 void CommandExecutor::execArgs(Command &command) {
-    pid_t pid = fork();
-    jobHandler->setCurrentForegroundJob(pid);
-    execute(command, pid);
-    waitpid(pid, nullptr, 0);
+    child_pid = fork();
+    jobHandler->setCurrentForegroundJob(child_pid);
+    execute(command);
+    waitpid(child_pid, nullptr, 0);
+    child_pid = -1;
 }
 
 void CommandExecutor::execArgsPiped(const std::vector<Command> &commands) {
@@ -19,46 +21,47 @@ void CommandExecutor::execArgsPiped(const std::vector<Command> &commands) {
             exit(EXIT_FAILURE);
         }
     }
-    int pid;
-    int commandIndex = 0;
-    while (commandIndex < commands.size()) {
-        pid = fork();
-        if (pid == 0) {
-            if (commandIndex < commands.size() - 1) {
-                dup2(pipefds[commandIndex * 2 + 1], STDOUT_FILENO);
+    std::vector<pid_t> child_pids;
+    for (int i = 0; i < commands.size(); ++i) {
+        child_pid = fork();
+        if (child_pid == 0) {
+            if (i < commands.size() - 1) {
+                dup2(pipefds[i * 2 + 1], STDOUT_FILENO);
             }
-            if (commandIndex != 0) {
-                dup2(pipefds[(commandIndex - 1) * 2], STDIN_FILENO);
+            if (i != 0) {
+                dup2(pipefds[(i - 1) * 2], STDIN_FILENO);
             }
             for (int i = 0; i < 2 * numPipes; i++) {
                 close(pipefds[i]);
             }
-            execute(commands[commandIndex], pid);
+            execute(commands[i]);
             exit(EXIT_FAILURE);
-        } else if (pid < 0) {
+        } else if (child_pid < 0) {
             perror("Error forking.");
             exit(EXIT_FAILURE);
         }
-        commandIndex++;
+        child_pids.push_back(child_pid);
     }
     for (int i = 0; i < 2 * numPipes; i++) {
         close(pipefds[i]);
     }
-    for (int i = 0; i < numPipes + 1; i++) {
+    for (const auto &pid: child_pids) {
         waitpid(pid, nullptr, 0);
     }
 }
+
 
 void CommandExecutor::execArgsRedirect(Command &command) {
 
 }
 
 void CommandExecutor::execArgsBackground(Command &command) {
-    pid_t pid = fork();
-    if (pid > 0) {
-        jobHandler->addJob(Job(pid, "running", command));
+    child_pid = fork();
+    if (child_pid > 0) {
+        jobHandler->addJob(Job(child_pid, "running", command));
     }
-    execute(command, pid);
+    execute(command);
+    child_pid = -1;
 }
 
 bool CommandExecutor::isBackgroundTask(Command &command) {
@@ -69,11 +72,11 @@ bool CommandExecutor::isBackgroundTask(Command &command) {
     return isBackground;
 }
 
-void CommandExecutor::execute(Command command, pid_t pid) {
-    if (pid == -1) {
+void CommandExecutor::execute(Command command) const {
+    if (child_pid == -1) {
         std::cout << "Failed forking child.." << std::endl;
         exit(EXIT_FAILURE);
-    } else if (pid == 0 && execvp(command[0], command.getArgs().data()) < 0) {
+    } else if (child_pid == 0 && execvp(command[0], command.getArgs().data()) < 0) {
         std::cout << "shll: command not found.." << std::endl;
         exit(EXIT_FAILURE);
     }
