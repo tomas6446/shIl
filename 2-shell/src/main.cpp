@@ -20,38 +20,19 @@ std::string printCurrentDirectory() {
            + std::string(BLUE_TEXT) + " ~" + cwd.data() + " $ " + std::string(WHITE_TEXT);
 }
 
-bool parse(const std::string &input, Command &command,
-           Command &commandPiped) {
-    auto commands = Command::split(input, " | ");
-
-    if (commands.getArgsCount() > 1) {
-        command = Command::split(commands[0], " ");
-        commandPiped = Command::split(commands[1], " ");
-        return true;
-    } else {
-        command = Command::split(input, " ");
-        return false;
-    }
-}
-
-bool isChangeDirCommand(Command &command) {
+bool isChangeDirCommand(const Command &command) {
     return strcmp(command[0], "cd") == 0;
 }
 
-void handleChangeDir(Command &command) {
+void handleChangeDir(const Command &command) {
     if (command.getArgsCount() < 2 || chdir(command[1]) >= 0) {
         return;
     }
     perror("chdir");
 }
 
-void handleExecution(const std::string &input, CommandExecutor *commandExecutor) {
-    Command command(0, std::array<char *, MAX_ARGS>());
-    Command commandPiped(0, std::array<char *, MAX_ARGS>());
-
-    if (parse(input, command, commandPiped)) {
-        CommandExecutor::execArgsPiped(command, commandPiped);
-    } else if (isChangeDirCommand(command)) {
+void executeSingleCommand(Command &command, CommandExecutor *commandExecutor) {
+    if (isChangeDirCommand(command)) {
         handleChangeDir(command);
     } else if (CommandExecutor::isBackgroundTask(command)) {
         commandExecutor->execArgsBackground(command);
@@ -59,6 +40,16 @@ void handleExecution(const std::string &input, CommandExecutor *commandExecutor)
         commandExecutor->execArgs(command);
     }
 }
+
+void handleExecution(const std::string &input, CommandExecutor *commandExecutor) {
+    std::vector<Command> commands = Command::splitCommands(input, " | ");
+    if (commands.size() > 1) {
+        CommandExecutor::execArgsPiped(commands);
+    } else {
+        executeSingleCommand(commands[0], commandExecutor);
+    }
+}
+
 
 void sigtstp_handler(int signum) {
     std::cout << "\nshll: Received Ctrl+Z" << std::endl;

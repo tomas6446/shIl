@@ -59,6 +59,27 @@ Command Command::split(const std::string_view &str, const std::string &delimiter
     return result;
 }
 
+std::vector<Command> Command::splitCommands(const std::string_view &str, const std::string &delimiter) {
+    size_t pos_start = 0;
+    size_t pos_end;
+    std::string token;
+    std::vector<Command> commands;
+
+    while ((pos_end = str.find(delimiter, pos_start)) != std::string::npos) {
+        token = str.substr(pos_start, pos_end - pos_start);
+        pos_start = pos_end + delimiter.length();
+
+        Command cmd = split(token, " ");
+        commands.push_back(cmd);
+    }
+
+    token = str.substr(pos_start);
+    Command cmd = split(token, " ");
+    commands.push_back(cmd);
+
+    return commands;
+}
+
 void Command::free() {
     for (const auto &item: arguments) {
         delete item;

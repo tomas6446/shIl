@@ -12,7 +12,7 @@ public:
 
     void execArgs(Command &command);
 
-    static void execArgsPiped(Command &command, Command &commandPiped);
+    static void execArgsPiped(const std::vector<Command> &commands);
 
     void execArgsRedirect(Command &command);
 
@@ -21,7 +21,7 @@ public:
     static bool isBackgroundTask(Command &command);
 
 private:
-    static void execute(Command &command, pid_t pid);
+    static void execute(Command command, pid_t pid);
 
     JobHandler *jobHandler;
 };

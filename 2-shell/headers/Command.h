@@ -20,6 +20,8 @@ public:
 
     static Command split(const std::string_view &str, const std::string &delimiter);
 
+    static std::vector<Command> splitCommands(const std::string_view &str, const std::string &delimiter);
+
     void free();
 
     const char *operator[](size_t index) const;
@@ -31,4 +33,6 @@ public:
 private:
     std::array<char *, MAX_ARGS> arguments{};
     size_t argsCount = 0;
+
+
 };
