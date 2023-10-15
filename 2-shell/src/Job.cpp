@@ -12,7 +12,7 @@ void Job::setPid(pid_t pid) {
     Job::pid = pid;
 }
 
-const Command &Job::getCommand() const {
+const Command Job::getCommand() const {
     return command;
 }
 

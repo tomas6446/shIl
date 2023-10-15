@@ -1,7 +1,6 @@
 #include <iostream>
 #include <readline/readline.h>
 #include <readline/history.h>
-#include "../headers/main.h"
 #include "../headers/Command.h"
 #include "../headers/JobHandler.h"
 #include "../headers/CommandExecutor.h"
@@ -9,7 +8,9 @@
 auto BLUE_TEXT = "\033[34m";
 auto YELLOW_TEXT = "\033[33m";
 auto WHITE_TEXT = "\033[0m";
+const int MAX_ARG_LEN = 1000;
 pid_t child_pid = -1;
+
 
 std::string printCurrentDirectory() {
     std::array<char, MAX_ARG_LEN> cwd{};
@@ -25,17 +26,17 @@ std::string printCurrentDirectory() {
 }
 
 bool isChangeDirCommand(const Command &command) {
-    return strcmp(command[0], "cd") == 0;
+    return strcmp(command.getArguments()[0], "cd") == 0;
 }
 
 void handleChangeDir(const Command &command) {
-    if (command.getArgsCount() < 2 || chdir(command[1]) >= 0) {
+    if (command.getArguments().size() < 2 || chdir(command.getArguments()[1]) >= 0) {
         return;
     }
     perror("chdir");
 }
 
-void executeSingleCommand(Command &command, CommandExecutor *commandExecutor) {
+void executeSingleCommand(const Command &command, CommandExecutor *commandExecutor) {
     if (isChangeDirCommand(command)) {
         handleChangeDir(command);
     } else if (CommandExecutor::isBackgroundTask(command)) {

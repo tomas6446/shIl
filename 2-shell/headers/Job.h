@@ -12,7 +12,7 @@ public:
 
     void setPid(pid_t pid);
 
-    const Command &getCommand() const;
+    const Command getCommand() const;
 
     void setCommand(const Command &command);
 

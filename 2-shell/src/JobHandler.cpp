@@ -9,7 +9,7 @@ void JobHandler::handleJobs() const {
         std::cout << "No jobs at the moment." << std::endl;
         return;
     }
-    for (const auto &job: jobs) {
+    for (auto const &job: jobs) {
         std::cout << "[" << jobNumber << "] " << job.getStatus() << " " << job.getCommand().toString() << std::endl;
         jobNumber++;
     }

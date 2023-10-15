@@ -12,18 +12,18 @@ class CommandExecutor {
 public:
     explicit CommandExecutor(JobHandler *handler, pid_t &pid) : child_pid(pid), jobHandler(handler) {}
 
-    void execArgs(Command &command);
+    void execArgs(const Command &command);
 
     void execArgsPiped(const std::vector<Command> &commands);
 
-    void execArgsRedirect(Command &command);
+    void execArgsRedirect(const Command &command);
 
-    void execArgsBackground(Command &command);
+    void execArgsBackground(const Command &command);
 
-    static bool isBackgroundTask(Command &command);
+    static bool isBackgroundTask(const Command &command);
 
 private:
-    void execute(Command command) const;
+    void execute(const Command &command) const;
 
     pid_t &child_pid;
 
