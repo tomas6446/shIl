@@ -21,11 +21,12 @@ std::string printCurrentDirectory() {
     gethostname(hostname.data(), hostname.size());
     getcwd(cwd.data(), cwd.size());
 
-    std::string input;
-    std::cout << std::string(YELLOW_TEXT) + username.data() + "@" + hostname.data()
-                 + std::string(BLUE_TEXT) + " ~" + cwd.data() + " $ " + std::string(WHITE_TEXT);
+    std::string dir = std::string(YELLOW_TEXT) + username.data() + "@" + hostname.data()
+                      + std::string(BLUE_TEXT) + " ~" + cwd.data() + " $ " + std::string(WHITE_TEXT);
+    std::string input = std::string(readline(dir.c_str()));
     std::cout << std::flush;
-    return std::string(readline(input.c_str()));
+    add_history(input.c_str());
+    return input;
 }
 
 bool isChangeDirCommand(const Command &command) {
@@ -98,7 +99,6 @@ int main() {
             continue;
         }
         jobHandler->handleSigtstp();
-        add_history(input.c_str());
         handleExecution(input, commandExecutor);
     }
     return 0;
