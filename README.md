@@ -1,6 +1,6 @@
-# shll - A Custom Shell
+# shIl - A Custom Shell
 
-`shll` is a custom shell implementation, offering a unique command line experience and extensibility.
+`shIl` is a custom shell implementation, offering a unique command line experience and extensibility.
 
 ## Features
 
