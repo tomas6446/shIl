@@ -21,8 +21,11 @@ std::string printCurrentDirectory() {
     gethostname(hostname.data(), hostname.size());
     getcwd(cwd.data(), cwd.size());
 
-    return std::string(YELLOW_TEXT) + username.data() + "@" + hostname.data()
-           + std::string(BLUE_TEXT) + " ~" + cwd.data() + " $ " + std::string(WHITE_TEXT);
+    std::string input;
+    std::cout << std::string(YELLOW_TEXT) + username.data() + "@" + hostname.data()
+                 + std::string(BLUE_TEXT) + " ~" + cwd.data() + " $ " + std::string(WHITE_TEXT);
+    std::cout << std::flush;
+    return std::string(readline(input.c_str()));
 }
 
 bool isChangeDirCommand(const Command &command) {
@@ -55,15 +58,6 @@ void handleExecution(const std::string &input, CommandExecutor *commandExecutor)
     }
 }
 
-void sigtstp_handler(int signum) {
-    if (child_pid > 0) {
-        std::cout << "\nshll: Received Ctrl+Z." << std::endl;
-        kill(child_pid, SIGTSTP);
-    } else {
-        std::cout << "\nNo running job to suspend.\n";
-    }
-}
-
 bool isCustomCommand(const std::string &input, JobHandler *jobHandler) {
     if (input.empty()) {
         return true;
@@ -82,6 +76,15 @@ bool isCustomCommand(const std::string &input, JobHandler *jobHandler) {
     return false;
 }
 
+void sigtstp_handler(int signum) {
+    if (child_pid > 0) {
+        std::cout << "\nshll: Received Ctrl+Z." << std::endl;
+        kill(child_pid, SIGTSTP);
+    } else {
+        std::cout << "\nNo running job to suspend.\n";
+    }
+}
+
 int main() {
     signal(SIGTSTP, sigtstp_handler);
 
@@ -89,9 +92,7 @@ int main() {
     auto *commandExecutor = new CommandExecutor(jobHandler, child_pid);
 
     while (true) {
-        std::string input;
-        char const *line = readline(printCurrentDirectory().c_str());
-        input = std::string(line);
+        std::string input = printCurrentDirectory();
 
         if (isCustomCommand(input, jobHandler)) {
             continue;

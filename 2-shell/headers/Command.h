@@ -6,9 +6,9 @@
 
 class Command {
 public:
-    static Command split(const std::string_view &str, const std::string &delimiter);
+    static Command split(const std::string_view &, const std::string &);
 
-    static std::vector<Command> splitCommands(const std::string_view &str, const std::string &delimiter);
+    static std::vector<Command> splitCommands(const std::string_view &, const std::string &);
 
     std::vector<char *> getArguments() const;
 

@@ -9,17 +9,17 @@ class JobHandler {
 public:
     void handleJobs() const;
 
-    void handleFg(const std::string_view &input);
+    void handleFg(const std::string_view &);
 
-    void addJob(const Job &job);
+    void addJob(const Job &);
 
-    void handleBg(const std::string_view &input);
+    void handleBg(const std::string_view &);
 
     void handleSigtstp();
 
     pid_t getCurrentForegroundJob() const;
 
-    void setCurrentForegroundJob(pid_t currentForegroundJob);
+    void setCurrentForegroundJob(pid_t);
 
 private:
     pid_t currentForegroundJob = -1;

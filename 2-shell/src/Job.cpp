@@ -8,23 +8,23 @@ pid_t Job::getPid() const {
     return pid;
 }
 
-void Job::setPid(pid_t pid) {
-    Job::pid = pid;
+void Job::setPid(pid_t p) {
+    Job::pid = p;
 }
 
-const Command Job::getCommand() const {
+Command Job::getCommand() const {
     return command;
 }
 
-void Job::setCommand(const Command &command) {
-    Job::command = command;
+void Job::setCommand(const Command &com) {
+    Job::command = com;
 }
 
 const std::string &Job::getStatus() const {
     return status;
 }
 
-void Job::setStatus(const std::string_view &status) {
-    Job::status = status;
+void Job::setStatus(const std::string_view &stat) {
+    Job::status = stat;
 }
 

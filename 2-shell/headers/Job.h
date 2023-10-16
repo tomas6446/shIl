@@ -6,19 +6,19 @@ class Command;
 
 class Job {
 public:
-    Job(pid_t pid, std::string status, const Command &cmd);
+    Job(pid_t, std::string, const Command &);
 
     pid_t getPid() const;
 
-    void setPid(pid_t pid);
+    void setPid(pid_t);
 
-    const Command getCommand() const;
+    Command getCommand() const;
 
-    void setCommand(const Command &command);
+    void setCommand(const Command &);
 
     const std::string &getStatus() const;
 
-    void setStatus(const std::string_view &status);
+    void setStatus(const std::string_view &);
 
 private:
     pid_t pid;
