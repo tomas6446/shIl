@@ -78,7 +78,7 @@ bool isCustomCommand(const std::string &input, JobHandler *jobHandler) {
 
 void sigtstp_handler(int signum) {
     if (child_pid > 0) {
-        std::cout << "\nshll: Received Ctrl+Z." << std::endl;
+        std::cout << "\n shIl: Received Ctrl+Z." << std::endl;
         kill(child_pid, SIGTSTP);
     } else {
         std::cout << "\nNo running job to suspend.\n";

@@ -6,7 +6,7 @@ void CommandExecutor::execute(const Command &command) const {
         std::cout << "Failed forking child.." << std::endl;
         exit(EXIT_FAILURE);
     } else if (child_pid == 0 && execvp(command.getArguments()[0], command.getArguments().data()) < 0) {
-        std::cout << "shll: command not found.." << std::endl;
+        std::cout << " shIl: command not found.." << std::endl;
         exit(EXIT_FAILURE);
     }
 }
