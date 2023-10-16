@@ -1,7 +1,5 @@
 # shIl - A Custom Shell
 
-`shIl` is a custom shell implementation, offering a unique command line experience and extensibility.
-
 ![image](https://github.com/tomas6446/shIl/assets/77100735/3a7c016e-d95a-4c16-9fa9-bb3149cb9f1b)
 
 ## Features
