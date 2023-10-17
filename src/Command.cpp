@@ -10,16 +10,20 @@ Command Command::split(const std::string_view &str, const std::string &delimiter
 
     while ((pos_end = str.find(delimiter, pos_start)) != std::string::npos) {
         token = str.substr(pos_start, pos_end - pos_start);
-        auto *arg = new char[token.length() + 1];
-        std::strcpy(arg, token.c_str());
-
+        if (!token.empty()) {
+            auto *arg = new char[token.length() + 1];
+            std::strcpy(arg, token.c_str());
+            result.arguments.emplace_back(arg);
+        }
         pos_start = pos_end + delimiter.length();
-        result.arguments.emplace_back(arg);
     }
     token = str.substr(pos_start);
-    auto *arg = new char[token.length() + 1];
-    std::strcpy(arg, token.c_str());
-    result.arguments.emplace_back(arg);
+    if (!token.empty()) {
+        auto *arg = new char[token.length() + 1];
+        std::strcpy(arg, token.c_str());
+        result.arguments.emplace_back(arg);
+    }
+    result.arguments.emplace_back(nullptr);
     return result;
 }
 

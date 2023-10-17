@@ -6,7 +6,7 @@ void CommandExecutor::execute(const Command &command) const {
         std::cout << "Failed forking child.." << std::endl;
         exit(EXIT_FAILURE);
     } else if (child_pid == 0 && execvp(command.getArguments()[0], command.getArguments().data()) < 0) {
-        std::cout << " shIl: command not found.." << std::endl;
+        std::cout << "shIl: command not found.." << std::endl;
         exit(EXIT_FAILURE);
     }
 }
@@ -30,6 +30,7 @@ void CommandExecutor::execArgsPiped(const std::vector<Command> &commands) {
     std::vector<pid_t> child_pids;
     for (auto i = 0; i < commands.size(); ++i) {
         child_pid = fork();
+        jobHandler->setCurrentForegroundJob(child_pid);
         // If this is the child process
         if (child_pid == 0) {
             if (i < commands.size() - 1) {
@@ -45,6 +46,7 @@ void CommandExecutor::execArgsPiped(const std::vector<Command> &commands) {
                 close(pipefds[j]);
             }
             execute(commands[i]);
+            waitpid(child_pid, nullptr, 0);
             exit(EXIT_FAILURE);
         } else if (child_pid < 0) {
             perror("Error forking.");
@@ -52,12 +54,12 @@ void CommandExecutor::execArgsPiped(const std::vector<Command> &commands) {
         }
         child_pids.push_back(child_pid);
     }
+    for (auto &pid: child_pids) {
+        waitpid(pid, nullptr, 0);
+    }
     for (int i = 0; i < 2 * numPipes; i++) {
         // Close all pipe file descriptors in the parent process
         close(pipefds[i]);
-    }
-    for (const auto &pid: child_pids) {
-        waitpid(pid, nullptr, 0);
     }
 }
 
@@ -70,7 +72,9 @@ void CommandExecutor::execArgsBackground(const Command &command) {
 }
 
 bool CommandExecutor::isBackgroundTask(const Command &command) {
-    auto isBackground = !command.getArguments().empty() && strcmp(command.getArguments()[command.getArguments().size() - 1], "&") == 0;
+    auto isBackground =
+            command.getArguments()[command.getArguments().size() - 1] != nullptr && !command.getArguments().empty() &&
+            strcmp(command.getArguments()[command.getArguments().size() - 1], "&") == 0;
     if (isBackground) {
         command.getArguments().pop_back();
     }
