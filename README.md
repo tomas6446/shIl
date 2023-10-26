@@ -20,8 +20,8 @@
 ### Building
 
 ```bash
-git clone https://github.com/tomas6446/ shIl.git
-cd  shIl
+git clone https://github.com/tomas6446/shIl.git
+cd shIl
 bash run.sh
 ```
 
