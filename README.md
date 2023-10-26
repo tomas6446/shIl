@@ -5,7 +5,7 @@
 ## Features
 
 - [x] Basic command execution
-- [x] Input/Output redirection (`<`, `>`, `>>`)
+- [] Input/Output redirection (`<`, `>`, `>>`)
 - [x] Piping commands (`|`)
 - [x] Custom commands
 - [x] Directory changing
