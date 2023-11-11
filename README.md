@@ -17,7 +17,7 @@
 - GCC or any C++ compiler
 - POSIX compliant OS (tested on Linux)
 
-### Building
+### Running
 
 ```bash
 git clone https://github.com/tomas6446/shIl.git
